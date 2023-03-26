@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// mendefinisikan struk ini tipe data
 type MenuItem struct {
 	Name      string
 	OrderCode string
