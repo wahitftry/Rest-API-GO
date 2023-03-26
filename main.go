@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -8,7 +10,7 @@ import (
 type MenuItem struct {
 	Name      string
 	OrderCode string
-	price     int
+	Price     int
 }
 
 func getFoodMenu(c echo.Context) error {
@@ -16,15 +18,15 @@ func getFoodMenu(c echo.Context) error {
 		{
 			Name:      "bakmie",
 			OrderCode: "bakmie",
-			price:     12000,
+			Price:     12000,
 		},
 		{
 			Name:      "bakso",
 			OrderCode: "bakso",
-			price:     8000,
+			Price:     8000,
 		},
 	}
-	return c.JSON(201, foodMenu)
+	return c.JSON(http.StatusOK, foodMenu) // menjalankan status kode JSON
 }
 
 func main() {
