@@ -11,35 +11,47 @@ import (
 )
 
 type MenuItem struct {
-    Nama      string `json:"nama"`
+    Nama        string `json:"nama"`
     KodePesanan string `json:"kode_pesanan"`
-    Harga     int    `json:"harga"`
+    Harga       int    `json:"harga"`
 }
 
 const (
-    BatasMenuDefault = 100
-    UrutkanMenurutNama = "nama"
-    UrutkanMenurutHarga = "harga"
-    Menaik = "naik"
-    Menurun = "turun"
+    BatasMenuDefault     = 100
+    UrutkanMenurutNama   = "nama"
+    UrutkanMenurutHarga  = "harga"
+    Menaik               = "naik"
+    Menurun              = "turun"
+    MaxHarga             = 1000000
+    MaxPanjangNama       = 50
+    MaxPanjangKodePesanan = 10
 )
 
 var menuMakanan = []MenuItem{
     {
-        Nama:      "bakmie",
+        Nama:        "bakmie",
         KodePesanan: "bakmie",
-        Harga:     12000,
+        Harga:       12000,
     },
     {
-        Nama:      "bakso",
+        Nama:        "bakso",
         KodePesanan: "bakso",
-        Harga:     8000,
+        Harga:       8000,
     },
 }
 
 func validasiMenuItem(item *MenuItem) error {
     if item.Nama == "" || item.KodePesanan == "" {
         return errors.New("nama dan kode pesanan diperlukan")
+    }
+    if len(item.Nama) > MaxPanjangNama {
+        return errors.New("nama terlalu panjang")
+    }
+    if len(item.KodePesanan) > MaxPanjangKodePesanan {
+        return errors.New("kode pesanan terlalu panjang")
+    }
+    if item.Harga <= 0 || item.Harga > MaxHarga {
+        return errors.New("harga tidak valid")
     }
     return nil
 }
@@ -127,6 +139,71 @@ func main() {
         return c.JSON(http.StatusCreated, map[string]interface{}{
             "pesan": "Menu berhasil ditambahkan",
             "menu":  item,
+        })
+    })
+
+    e.PUT("/menu/:kode_pesanan", func(c echo.Context) error {
+        kodePesanan := c.Param("kode_pesanan")
+
+        var item *MenuItem
+        for i := range menuMakanan {
+            if menuMakanan[i].KodePesanan == kodePesanan {
+                item = &menuMakanan[i]
+                break
+            }
+        }
+
+        if item == nil {
+            return c.JSON(http.StatusNotFound, map[string]string{
+                "pesan": "Menu tidak ditemukan",
+            })
+        }
+
+        update := new(MenuItem)
+        if err := c.Bind(update); err != nil {
+            return c.JSON(http.StatusBadRequest, map[string]string{
+                "pesan": "tidak dapat memproses permintaan",
+            })
+        }
+
+        if update.Nama != "" {
+            if len(update.Nama) > MaxPanjangNama {
+                return c.JSON(http.StatusBadRequest, map[string]string{
+                    "pesan": "nama terlalu panjang",
+                })
+            }
+            item.Nama = update.Nama
+        }
+
+        if update.Harga != 0 {
+            if update.Harga <= 0 || update.Harga > MaxHarga {
+                return c.JSON(http.StatusBadRequest, map[string]string{
+                    "pesan": "harga tidak valid",
+                })
+            }
+            item.Harga = update.Harga
+        }
+
+        return c.JSON(http.StatusOK, map[string]interface{}{
+            "pesan": "Menu berhasil diperbarui",
+            "menu":  item,
+        })
+    })
+
+    e.DELETE("/menu/:kode_pesanan", func(c echo.Context) error {
+        kodePesanan := c.Param("kode_pesanan")
+
+        for i := range menuMakanan {
+            if menuMakanan[i].KodePesanan == kodePesanan {
+                menuMakanan = append(menuMakanan[:i], menuMakanan[i+1:]...)
+                return c.JSON(http.StatusOK, map[string]string{
+                    "pesan": "Menu berhasil dihapus",
+                })
+            }
+        }
+
+        return c.JSON(http.StatusNotFound, map[string]string{
+            "pesan": "Menu tidak ditemukan",
         })
     })
 
